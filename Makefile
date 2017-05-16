@@ -1,4 +1,4 @@
-HTMLDIR?=$(UH)/dds/pubs/web/home/ghtorrent-briefing
+HTMLDIR?=$(UH)/dds/pubs/web/home/git-mine-briefing
 TARGETS=$(shell sed -n 's|.*<a href="\([^"]*\).html">presentation.*|$(HTMLDIR)/\1.html $(HTMLDIR)/\1.pdf|p' index.html)
 INDEX=$(HTMLDIR)/index.html
 INDEX_PRES=$(HTMLDIR)/index.html
