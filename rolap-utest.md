@@ -57,7 +57,7 @@ Create a `Makefile` with the following contents:
 ```Makefile
 export RDBMS?=sqlite
 export MAINDB?=rxjs-ghtorrent
-export ROLAPDB?=driveby
+export ROLAPDB?=stratsel
 export DEPENDENCIES=rxjs-ghtorrent.db
 
 include ../../Makefile
@@ -72,7 +72,7 @@ Create a file `forked_projects.sql`
 ```sql
 -- Projects that have been forked
 
-create table driveby.forked_projects AS
+create table stratsel.forked_projects AS
   select distinct forked_from as id from projects;
 ```
 
@@ -111,7 +111,7 @@ END
 INCLUDE CREATE forked_projects.sql
 
 BEGIN RESULT
-driveby.forked_projects:
+stratsel.forked_projects:
 id
 15
 10
@@ -123,7 +123,7 @@ END
 ```
 $ make test
 ../..//run_test.sh
-not ok 1 - forked_projects.rdbu: test_driveby.forked_projects
+not ok 1 - forked_projects.rdbu: test_stratsel.forked_projects
 1..1
 ```
 
@@ -136,14 +136,14 @@ $ rdbunit --database=sqlite forked_projects.rdbu >script.sql
 $ sqlite3
 SQLite version 3.8.7.1 2014-10-29 13:59:56
 sqlite> .read script.sql
-not ok 1 - forked_projects.rdbu: test_driveby.forked_projects
+not ok 1 - forked_projects.rdbu: test_stratsel.forked_projects
 1..1
 
-sqlite> select * from test_driveby.forked_projects;
+sqlite> select * from test_stratsel.forked_projects;
 15
 10
 
-sqlite> select count(*) from test_driveby.forked_projects;
+sqlite> select count(*) from test_stratsel.forked_projects;
 3
 ```
 
@@ -152,7 +152,7 @@ sqlite> select count(*) from test_driveby.forked_projects;
 ```sql
 -- Projects that have been forked
 
-create table driveby.forked_projects AS
+create table stratsel.forked_projects AS
   select distinct forked_from as id from projects
   where forked_from is not null;
 ```
@@ -164,7 +164,7 @@ $ make test
 rm -f ./.depend
 sh ../..//mkdep.sh >./.depend
 ../..//run_test.sh
-ok 1 - forked_projects.rdbu: test_driveby.forked_projects
+ok 1 - forked_projects.rdbu: test_stratsel.forked_projects
 1..1
 ```
 
@@ -177,8 +177,8 @@ Create a file `pr_projects.sql`
 ```sql
 -- Projects that have been forked and have a PR
 
-create table driveby.pr_projects AS
-  select distinct forked_projects.id from driveby.forked_projects
+create table stratsel.pr_projects AS
+  select distinct forked_projects.id from stratsel.forked_projects
   inner join issues on issues.repo_id = forked_projects.id;
 ```
 
@@ -200,7 +200,7 @@ Create a file `pr_projects.rdbu`
 
 BEGIN SETUP
 
-driveby.forked_projects:
+stratsel.forked_projects:
 id
 1
 2
@@ -217,7 +217,7 @@ END
 INCLUDE CREATE pr_projects.sql
 
 BEGIN RESULT
-driveby.pr_projects:
+stratsel.pr_projects:
 id
 1
 4
@@ -229,9 +229,9 @@ END
 ```
 $ make test
 ../..//run_test.sh
-ok 1 - forked_projects.rdbu: test_driveby.forked_projects
+ok 1 - forked_projects.rdbu: test_stratsel.forked_projects
 1..1
-ok 1 - pr_projects.rdbu: test_driveby.pr_projects
+ok 1 - pr_projects.rdbu: test_stratsel.pr_projects
 1..1
 ```
 
@@ -242,9 +242,9 @@ Create a file `recent_commit_projects.sql`
 ```sql
 -- Projects with recent commits
 
-create table driveby.pr_projects AS
+create table stratsel.pr_projects AS
   select distinct pr_projects.id
-  from driveby.pr_projects
+  from stratsel.pr_projects
   left join commits
   on commits.project_id = pr_projects.id
   where created_at > '2017-01-01';
@@ -257,7 +257,7 @@ Create a file `recent_commit_projects.rdbu`
 # Projects that have a recent commit associated with them
 
 BEGIN SETUP
-driveby.pr_projects:
+stratsel.pr_projects:
 id
 1
 2
@@ -276,7 +276,7 @@ END
 INCLUDE CREATE recent_commit_projects.sql
 
 BEGIN RESULT
-driveby.recent_commit_projects:
+stratsel.recent_commit_projects:
 id
 1
 2
@@ -288,12 +288,12 @@ END
 ```
 $ make test
 ../..//run_test.sh
-ok 1 - forked_projects.rdbu: test_driveby.forked_projects
+ok 1 - forked_projects.rdbu: test_stratsel.forked_projects
 1..1
-ok 1 - pr_projects.rdbu: test_driveby.pr_projects
+ok 1 - pr_projects.rdbu: test_stratsel.pr_projects
 1..1
 Error: near line 25: table pr_projects already exists
-Error: near line 38: no such table: test_driveby.recent_commit_projects
+Error: near line 38: no such table: test_stratsel.recent_commit_projects
 1..1
 ../../Makefile:79: recipe for target 'test' failed
 make: *** [test] Error 1
@@ -305,9 +305,9 @@ make: *** [test] Error 1
 ```sql
 -- Projects with recent commits
 
-create table driveby.recent_commit_projects AS
+create table stratsel.recent_commit_projects AS
   select distinct pr_projects.id
-  from driveby.pr_projects
+  from stratsel.pr_projects
   left join commits
   on commits.project_id = pr_projects.id
   where created_at > '2017-01-01';
@@ -320,11 +320,11 @@ $ make test
 rm -f ./.depend
 sh ../..//mkdep.sh >./.depend
 ../..//run_test.sh
-ok 1 - forked_projects.rdbu: test_driveby.forked_projects
+ok 1 - forked_projects.rdbu: test_stratsel.forked_projects
 1..1
-ok 1 - pr_projects.rdbu: test_driveby.pr_projects
+ok 1 - pr_projects.rdbu: test_stratsel.pr_projects
 1..1
-ok 1 - recent_commit_projects.rdbu: test_driveby.recent_commit_projects
+ok 1 - recent_commit_projects.rdbu: test_stratsel.recent_commit_projects
 1..1
 ```
 
@@ -344,8 +344,8 @@ sh ../..//run_sql.sh recent_commit_projects.sql >tables/recent_commit_projects
 ```
 -- Projects that have been forked and have a PR
 
-create table driveby.pr_projects AS
-  select distinct forked_projects.id from driveby.forked_projects
+create table stratsel.pr_projects AS
+  select distinct forked_projects.id from stratsel.forked_projects
   inner join pull_requests on pull_requests.base_repo_id = forked_projects.id;
 ```
 
@@ -368,13 +368,13 @@ $ make test
 rm -f ./.depend
 sh ../..//mkdep.sh >./.depend
 ../..//run_test.sh
-ok 1 - forked_projects.rdbu: test_driveby.forked_projects
+ok 1 - forked_projects.rdbu: test_stratsel.forked_projects
 1..1
-ok 1 - pr_projects.rdbu: test_driveby.pr_projects
+ok 1 - pr_projects.rdbu: test_stratsel.pr_projects
 1..1
-ok 1 - recent_commit_projects.rdbu: test_driveby.recent_commit_projects
+ok 1 - recent_commit_projects.rdbu: test_stratsel.recent_commit_projects
 1..1
-ok 1 - recent_issue_projects.rdbu: test_driveby.recent_issue_projects
+ok 1 - recent_issue_projects.rdbu: test_stratsel.recent_issue_projects
 1..1
 $ make
 mkdir -p tables
@@ -387,21 +387,22 @@ Create a file `project_stars.sql`
 ```
 -- Projects with recent issues and the number of stars
 
-create table driveby.project_stars AS
+create table stratsel.project_stars AS
   select recent_issue_projects.id as id, count(*) as stars
-  from driveby.recent_issue_projects
+  from stratsel.recent_issue_projects
   left join watchers
   on watchers.repo_id = recent_issue_projects.id
   group by recent_issue_projects.id;
 ```
 
+---
 ## Corresponding test
 Create a file `project_stars.rdbu`
 ```
 # Projects with recent issues and the number of stars
 
 BEGIN SETUP
-driveby.recent_issue_projects:
+stratsel.recent_issue_projects:
 id
 1
 2
@@ -417,7 +418,7 @@ END
 INCLUDE CREATE project_stars.sql
 
 BEGIN RESULT
-driveby.project_stars:
+stratsel.project_stars:
 id      stars
 1       2
 2       1
@@ -429,15 +430,15 @@ END
 ## Run test
 ```
 ../..//run_test.sh
-ok 1 - forked_projects.rdbu: test_driveby.forked_projects
+ok 1 - forked_projects.rdbu: test_stratsel.forked_projects
 1..1
-ok 1 - pr_projects.rdbu: test_driveby.pr_projects
+ok 1 - pr_projects.rdbu: test_stratsel.pr_projects
 1..1
-not ok 1 - project_stars.rdbu: test_driveby.project_stars
+not ok 1 - project_stars.rdbu: test_stratsel.project_stars
 1..1
-ok 1 - recent_commit_projects.rdbu: test_driveby.recent_commit_projects
+ok 1 - recent_commit_projects.rdbu: test_stratsel.recent_commit_projects
 1..1
-ok 1 - recent_issue_projects.rdbu: test_driveby.recent_issue_projects
+ok 1 - recent_issue_projects.rdbu: test_stratsel.recent_issue_projects
 1..1
 ```
 
@@ -447,9 +448,9 @@ Count only non-null rows
 ```
 -- Projects with recent issues and the number of stars
 
-create table driveby.project_stars AS
+create table stratsel.project_stars AS
   select recent_issue_projects.id as id, count(watchers.repo_id) as stars
-  from driveby.recent_issue_projects
+  from stratsel.recent_issue_projects
   left join watchers
   on watchers.repo_id = recent_issue_projects.id
   group by recent_issue_projects.id;
@@ -462,15 +463,15 @@ $ make test
 rm -f ./.depend
 sh ../..//mkdep.sh >./.depend
 ../..//run_test.sh
-ok 1 - forked_projects.rdbu: test_driveby.forked_projects
+ok 1 - forked_projects.rdbu: test_stratsel.forked_projects
 1..1
-ok 1 - pr_projects.rdbu: test_driveby.pr_projects
+ok 1 - pr_projects.rdbu: test_stratsel.pr_projects
 1..1
-ok 1 - project_stars.rdbu: test_driveby.project_stars
+ok 1 - project_stars.rdbu: test_stratsel.project_stars
 1..1
-ok 1 - recent_commit_projects.rdbu: test_driveby.recent_commit_projects
+ok 1 - recent_commit_projects.rdbu: test_stratsel.recent_commit_projects
 1..1
-ok 1 - recent_issue_projects.rdbu: test_driveby.recent_issue_projects
+ok 1 - recent_issue_projects.rdbu: test_stratsel.recent_issue_projects
 1..1
 ```
 
@@ -479,17 +480,17 @@ ok 1 - recent_issue_projects.rdbu: test_driveby.recent_issue_projects
 ```
 $ make test
 ../..//run_test.sh
-ok 1 - forked_projects.rdbu: test_driveby.forked_projects
+ok 1 - forked_projects.rdbu: test_stratsel.forked_projects
 1..1
-ok 1 - popular_projects.rdbu: test_driveby.popular_projects
+ok 1 - popular_projects.rdbu: test_stratsel.popular_projects
 1..1
-ok 1 - pr_projects.rdbu: test_driveby.pr_projects
+ok 1 - pr_projects.rdbu: test_stratsel.pr_projects
 1..1
-ok 1 - project_stars.rdbu: test_driveby.project_stars
+ok 1 - project_stars.rdbu: test_stratsel.project_stars
 1..1
-ok 1 - recent_commit_projects.rdbu: test_driveby.recent_commit_projects
+ok 1 - recent_commit_projects.rdbu: test_stratsel.recent_commit_projects
 1..1
-ok 1 - recent_issue_projects.rdbu: test_driveby.recent_issue_projects
+ok 1 - recent_issue_projects.rdbu: test_stratsel.recent_issue_projects
 1..1
 $ make
 mkdir -p tables
