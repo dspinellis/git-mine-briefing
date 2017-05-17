@@ -8,19 +8,19 @@
 ---
 ## Real-world queries can be expensive
 ```
-Jan 21 12:22 user_pull_request_activity
-Jan 21 12:58 user_combined_activity
-[29 lines removed]
-Jan 21 14:40 new_members
-Jan 21 14:40 nl_commit_comments
-Jan 21 17:56 nl_commits
-Jan 21 20:52 nl_issue_comments
-[10 lines removed]
-Jan 21 21:49 nl_pull_request_comments
-Jan 22 00:08 nl_user_combined_activity
-[12 lines removed]
-Jan 22 02:04 leader_project_performance
-Jan 22 02:05 lines_per_commit
+May 14 14:37 yearly_commits
+May 14 16:34 yearly_project_commits
+May 15 00:02 projects
+May 15 00:04 user_commit_activity
+May 15 01:57 yearly_commit_comments
+[22 lines omitted]
+May 15 03:28 commits_with_comments
+May 15 04:50 contributor_followers
+[42 lines omitted]
+May 15 08:49 q1_committers
+May 15 10:02 q1_issue_managers
+[7 lines omitted]
+May 15 10:51 nl_issues_leader_comments
 ```
 
 ---
@@ -41,10 +41,12 @@ Jan 22 02:05 lines_per_commit
 ## Example task
 1. Choose repositories that have forks (_A_)
 2. from _A_, exclude repos that never received a PR (_B_)
-3. from _B_, exclude repos that where inactive _recently_ (_C_)
+3. from _B_, exclude repos that were inactive _recently_ (_C_)
+4. from _C_, exclude repos that have fewer than 100 stars (_D_)
+5. Obtain number of files and lines of code for each project
 
-On _C_, we can then apply further criteria (e.g. programming language,
-build system, minimum number of stars etc).
+We could then apply further criteria (e.g. programming language,
+build system, number of contributors, etc).
 
 ---
 ## Environment setup
@@ -509,3 +511,182 @@ dot -Tpng graph.dot -o graph.png
 
 ![SQL query simple dependency graph](a/graph2.png)
 
+
+---
+## Obtain repo data
+* Write out repository URLs
+* Create script to analyze repos
+* Import back results for further analysis
+
+
+---
+## Repository URLs
+Create a file `project_urls.sql`
+```sql
+-- URLs of popular projects
+select projects.id, 'https://github.com/' || substr(url, 30) as url
+from stratsel.popular_projects
+left join projects
+on projects.id = popular_projects.id;
+```
+
+---
+## Unit test
+* Use `INCLUDE SELECT`
+* No table name in result
+
+```
+# Projects that have a recent commit associated with them
+
+BEGIN SETUP
+stratsel.popular_projects:
+id
+1
+2
+
+projects:
+id      url
+1       'https://api.github.com/repos/foo'
+2       'https://api.github.com/repos/bar'
+3       'https://api.github.com/repos/foobar'
+END
+
+INCLUDE SELECT project_urls.sql
+
+BEGIN RESULT
+id      url
+1       'https://github.com/foo'
+2       'https://github.com/bar'
+END
+```
+
+---
+## Run tests
+```
+$ make test
+rm -f ./.depend
+sh ../..//mkdep.sh >./.depend
+../..//run_test.sh
+ok 1 - forked_projects.rdbu: test_stratsel.forked_projects
+1..1
+ok 1 - popular_projects.rdbu: test_stratsel.popular_projects
+1..1
+ok 1 - pr_projects.rdbu: test_stratsel.pr_projects
+1..1
+ok 1 - project_stars.rdbu: test_stratsel.project_stars
+1..1
+ok 1 - project_urls.rdbu: test_select_result
+1..1
+ok 1 - recent_commit_projects.rdbu: test_stratsel.recent_commit_projects
+1..1
+ok 1 - recent_issue_projects.rdbu: test_stratsel.recent_issue_projects
+1..1
+```
+
+---
+## Run queries
+* Result is in `reports`
+* Named after the query
+
+```
+$ make
+rm -f ./.depend
+sh ../..//mkdep.sh >./.depend
+mkdir -p reports
+sh ../..//run_sql.sh project_urls.sql >reports/project_urls.txt
+$ cat reports/project_urls.txt
+1|https://github.com/ReactiveX/rxjs
+```
+
+---
+## Script to analyze repos
+```sh
+#!/bin/sh
+# Create a CSV file with files and lines per project
+
+set -e
+
+mkdir -p clones data
+cd clones
+
+file_list()
+{
+  git ls-tree --full-tree -r --name-only "$@" HEAD
+}
+
+while IFS=\| read id url ; do
+  git clone --bare "$url" $id
+  cd $id
+  nfiles=$(file_list | wc -l)
+  nlines=$(file_list -z |
+    xargs -0 -I '{}' git show 'HEAD:{}' |
+    wc -l)
+  echo "$id,$nfiles,$nlines"
+  cd ..
+done <../reports/project_urls.txt >../data/metrics.csv
+```
+
+---
+## Import data (SQLite)
+```sql
+Create file `project_metrics.sql`
+create table stratsel.project_metrics (id integer,
+  files integer, lines integer);
+.separator ","
+.import data/metrics.csv stratsel.project_metrics
+```
+
+---
+## Import data (MySQL)
+```sql
+Create file `project_metrics.sql`
+create table stratsel.project_metrics (id integer,
+  files integer, lines integer);
+LOAD DATA LOCAL INFILE 'data/metrics.csv'
+INTO TABLE stratsel.project_metrics
+FIELDS TERMINATED BY ',';
+```
+
+---
+## Add dependencies
+```Makefile
+tables/project_metrics: data/metrics.csv
+
+data/metrics.csv: reports/project_urls.txt project_metrics.sh
+        sh project_metrics.sh
+```
+
+---
+## Run make
+```
+$ make
+sh project_metrics.sh
+Cloning into bare repository '1'...
+remote: Counting objects: 30680, done.
+remote: Compressing objects: 100% (7/7), done.
+remote: Total 30680 (delta 2), reused 2 (delta 2), pack-reused 30671
+Receiving objects: 100% (30680/30680), 73.95 MiB | 10.29 MiB/s, done.
+Resolving deltas: 100% (23964/23964), done.
+Checking connectivity... done.
+mkdir -p tables
+sh ../..//run_sql.sh project_metrics.sql >tables/project_metrics
+```
+
+---
+## Other goodies
+* `make tags`
+* `make sorted-dependencies`
+* `make clean`
+
+---
+## Takeaways
+* Split analysis into many small queries
+* Use [simple-rolap](https://github.com/dspinellis/simple-rolap) to automate process
+* *Errare humanum est*
+* Code a little, test a little
+* Use [rdbunit](https://github.com/dspinellis/rdbunit/) to express tests
+* Write additional processing as scripts
+* Use *make* dependencies to tie everything together
+
+---
+# Thank you!
