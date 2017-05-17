@@ -1,8 +1,9 @@
 \vspace{2ex}
 Georgios Gousios \\
-TU Delft EWI / ST \\
+Deparment of Software Technology\\
+Delft University of Technology \\
 \href{mailto:g.gousios@tudelft.nl}{g.gousios@tudelft.nl} \\
-\url{http://www.gousios.gr/} \\
+\url{http://www.gousios.org/} \\
 \href{https://twitter.com/gousiosg}{@gousiosg} \\
 \vspace{1ex}
 and \\
