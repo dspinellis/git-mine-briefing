@@ -5,6 +5,8 @@
 * Expensive
 * Example: leader contribution
 
+![Leader vs member contributions](a/leader-contributions.png)
+
 ---
 ## Project selection
 
