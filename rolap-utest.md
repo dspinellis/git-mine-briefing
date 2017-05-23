@@ -1,5 +1,29 @@
 <!-- vim: fileencoding=utf-8
 -->
+## Real-world queries
+* Complex
+* Expensive
+* Example: leader contribution
+
+---
+## Project selection
+
+* Examine data for a period of exactly one year
+* Eliminate projects that started their life within the examined period
+* Select projects having at least ten watchers and at least 20 commits made by at least seven different people
+
+---
+## Project leaders
+
+* Member’s contribution:
+ * Commits
+ * Commit comments
+ * Issue events
+ * Issue comments
+ * Pull request comments
+* Leader: the individual with 20% more project contributions than the one with second highest
+
+---
 ## Real-world queries can be complex
 ![SQL query dependency graph](a/graph.png)
 
@@ -690,3 +714,6 @@ sh ../..//run_sql.sh project_metrics.sql >tables/project_metrics
 
 ---
 # Thank you!
+
+* The leader selection case was done in collaboration with Niki Panteli and Lefteris Angelis.
+* The research described has been partially carried out as part of the CROSSMINER Project, which has received funding from the European Union's Horizon 2020 Research and Innovation Programme under grant agreement No. 732223.
